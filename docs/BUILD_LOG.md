@@ -53,4 +53,26 @@ This log records every incremental development phase, commands executed, automat
   - `npm test` (`vitest run`) -> 4 test suites, 13 tests passed in 325ms.
   - `npm run build` (`tsc --noEmit && vite build`) -> Production bundle built in 655ms with 0 errors.
 - **Known Issues:** None.
-- **Next Recommended Task:** Proceed to **Phase 2: First explorable environment** (Verdant Reach greybox terrain with elevation contours, water streams/ponds, biome boundaries, minimap view with player cursor, and fog-of-war discovery system).
+- **Next Recommended Task:** Proceed to **Phase 2: First explorable environment**.
+
+---
+
+## Phase 2: First Explorable Environment (Verdant Reach Greybox)
+- **Date:** 2026-11-10
+- **Status:** Complete (Verified)
+- **Increment Goal:** Construct Verdant Reach starter environment with continuous heightfield terrain, tranquil pond water plane, POI landmarks, atmospheric sky dome with drifting clouds, real-time minimap with player heading, and fog-of-war discovery system.
+- **Completed Tasks:**
+  - [x] Defined continuous heightfield mathematical function `getTerrainHeight(x, z)` and landmarks in `src/game/world/terrain/TerrainData.ts`.
+  - [x] Implemented contoured terrain with vertex color elevation gradients (sand, lush grass, dark grass, slate rock) and animated water surface in `src/game/world/terrain/VerdantTerrain.tsx`.
+  - [x] Placed regional landmarks in `src/game/world/landmarks/VerdantLandmarks.tsx` (Ancient Waystone, Elder Pine Grove, Stepping Stones, Whispering Ridge slate crag, and circling perimeter mountain wall).
+  - [x] Created atmospheric sky with sun lighting, ambient daylight, and procedural drifting clouds in `src/game/world/sky/StylizedSky.tsx`.
+  - [x] Built grid-based fog-of-war engine with landmark detection and serialization in `src/game/world/fog/FogOfWarSystem.ts`.
+  - [x] Built circular HUD minimap radar in `src/ui/minimap/Minimap.tsx` featuring live shroud clearing, landmark icons, player heading pointer, cardinal directions, exploration percentage, and 'M' zoom toggle.
+  - [x] Integrated heightfield collision in `src/game/player/PlayerKinematics.ts` (terrain clamping, water wading speed reduction, and world boundary limits).
+  - [x] Added unit test suites `src/tests/TerrainData.test.ts` (6 tests) and `src/tests/FogOfWar.test.ts` (4 tests).
+- **Commands Run & Verified:**
+  - `npm run typecheck` (`tsc --noEmit`) -> Passed with 0 errors.
+  - `npm test` (`vitest run`) -> 7 test suites, 26 tests passed in 348ms.
+  - `npm run build` (`tsc --noEmit && vite build`) -> Production bundle built in 643ms without errors.
+- **Known Issues:** None.
+- **Next Recommended Task:** Proceed to **Phase 3: Creature foundation** (define core Creature data models, build 6 original starter species, add spawn zones/population caps, implement wander/investigate/flee/return AI behaviors, target selection HUD, and creature journal discovery).

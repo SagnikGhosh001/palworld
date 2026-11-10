@@ -7,6 +7,7 @@ import { usePlayerStore } from '@/game/player/usePlayerStore';
 import { inputManager } from '@/game/player/InputManager';
 import { soundFx } from '@/game/audio/AudioSynthesizer';
 import { MovementState } from '@/game/player/player.types';
+import { Minimap } from '@/ui/minimap/Minimap';
 
 export function App() {
   const [audioMuted, setAudioMuted] = useState(false);
@@ -15,12 +16,14 @@ export function App() {
     speed: string;
     state: MovementState;
     staminaPct: number;
+    rotationY: number;
     activeKeys: string[];
   }>({
     pos: [0, 0, 0],
     speed: '0.0',
     state: 'IDLE',
     staminaPct: 100,
+    rotationY: 0,
     activeKeys: [],
   });
 
@@ -47,6 +50,7 @@ export function App() {
           speed: spd,
           state: s.movementState,
           staminaPct: pct,
+          rotationY: s.rotationY,
           activeKeys: inputManager.getActiveKeys(),
         });
       }
@@ -84,6 +88,9 @@ export function App() {
         {/* 3D Viewport */}
         <GameCanvas />
 
+        {/* Real-time Minimap & Fog-of-War Radar */}
+        <Minimap playerYaw={hudState.rotationY} />
+
         {/* Top-Left Header & Diagnostics */}
         <header
           style={{
@@ -116,8 +123,8 @@ export function App() {
             <h1 style={{ fontSize: '15px', fontWeight: 700, letterSpacing: '0.05em', color: '#f8fafc', margin: 0 }}>
               CREATUREBOUND
             </h1>
-            <span style={{ fontSize: '11px', background: '#0284c7', color: '#fff', padding: '2px 6px', borderRadius: '4px' }}>
-              Phase 1 Movement Active
+            <span style={{ fontSize: '11px', background: '#059669', color: '#fff', padding: '2px 6px', borderRadius: '4px' }}>
+              Phase 2: Verdant Reach
             </span>
           </div>
 
@@ -133,9 +140,9 @@ export function App() {
 
           {/* Real-time Keyboard Detection Feedback */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#64748b' }}>
-            <span>Keys Detected:</span>
+            <span>Keys:</span>
             {hudState.activeKeys.length === 0 ? (
-              <span style={{ color: '#475569' }}>None (click canvas & press WASD)</span>
+              <span style={{ color: '#475569' }}>None (click & press WASD)</span>
             ) : (
               hudState.activeKeys.map((k) => (
                 <span
@@ -214,7 +221,7 @@ export function App() {
             <span>•</span>
             <span><strong>Space</strong> Jump</span>
             <span>•</span>
-            <span><strong>Click & Drag</strong> Look</span>
+            <span><strong>M</strong> Zoom Map</span>
             <span>•</span>
             <button
               onClick={resetPosition}

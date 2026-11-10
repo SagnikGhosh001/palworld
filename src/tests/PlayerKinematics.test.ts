@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { PlayerKinematics, DEFAULT_PLAYER_STATS } from '@/game/player/PlayerKinematics';
 import { PlayerInput, PlayerState } from '@/game/player/player.types';
+import { getTerrainHeight } from '@/game/world/terrain/TerrainData';
 
 function createInitialState(): PlayerState {
   return {
@@ -88,8 +89,9 @@ describe('PlayerKinematics', () => {
       state = PlayerKinematics.update(state, emptyInput, 0, 0.016);
     }
 
-    // Should land back on ground plane (y = 0)
-    expect(state.position[1]).toBe(0);
+    // Should land back on terrain height
+    const expectedGroundHeight = getTerrainHeight(state.position[0], state.position[2]);
+    expect(state.position[1]).toBeCloseTo(expectedGroundHeight, 2);
     expect(state.isGrounded).toBe(true);
     expect(state.velocity[1]).toBe(0);
   });
