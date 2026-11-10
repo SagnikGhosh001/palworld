@@ -29,4 +29,28 @@ This log records every incremental development phase, commands executed, automat
   - `npm test` (`vitest run`) -> 3 test suites, 7 tests passed.
   - `npm run build` (`tsc --noEmit && vite build`) -> Production bundle generated in 1.19s without errors.
 - **Known Issues:** None.
-- **Next Recommended Task:** Proceed to **Phase 1: Third-person movement prototype** (player character mesh, 3rd-person follow camera with collision/smooth damping, WASD movement, turning, jump, sprint, and ground collision).
+- **Next Recommended Task:** Proceed to **Phase 1: Third-person movement prototype**.
+
+---
+
+## Phase 1: Third-Person Movement Prototype
+- **Date:** 2026-11-10
+- **Status:** Complete (Verified)
+- **Increment Goal:** Implement responsive third-person adventurer character controller, procedural 3D model with walk/run bobbing, follow camera with mouse yaw/pitch orbit, ground collision, sprint & stamina system, and HUD telemetry.
+- **Completed Tasks:**
+  - [x] Defined player types and stats in `src/game/player/player.types.ts`.
+  - [x] Implemented decoupled keyboard & mouse input handling in `src/game/player/InputManager.ts`.
+  - [x] Implemented deterministic kinematics in `src/game/player/PlayerKinematics.ts` (normalized planar movement, camera-relative angle conversion, smooth rotation, gravity, jump impulses, stamina drain and recovery).
+  - [x] Built global reactive player store in `src/game/player/usePlayerStore.ts`.
+  - [x] Built stylized procedural 3D Adventurer character in `src/game/player/PlayerCharacter.tsx` (tunic, belt, explorer hat, rucksack with bedroll, glowing visor, and speed-adaptive limb swing & bob animations).
+  - [x] Implemented third-person follow camera in `src/game/player/ThirdPersonCamera.tsx` (smooth position damping, pitch clamping, ground clearance preservation, mouse drag/look orbit).
+  - [x] Created `src/game/player/PlayerController.ts` linking kinematics to headless `GameLoop`, triggering procedural jump/landing and footstep audio.
+  - [x] Updated `src/game/GameCanvas.tsx` with explorable terrain floor, grid, decorative boulders, and pine trees.
+  - [x] Updated HUD in `src/app/App.tsx` with live coordinates, velocity, movement state tags, animated stamina bar, and control hints.
+  - [x] Added unit test suite in `src/tests/PlayerKinematics.test.ts` (6 tests covering idle, camera-relative vectoring, diagonal normalization, sprint stamina drain, jump & gravity landing, stamina recovery).
+- **Commands Run & Verified:**
+  - `npm run typecheck` (`tsc --noEmit`) -> Passed with 0 errors.
+  - `npm test` (`vitest run`) -> 4 test suites, 13 tests passed in 325ms.
+  - `npm run build` (`tsc --noEmit && vite build`) -> Production bundle built in 655ms with 0 errors.
+- **Known Issues:** None.
+- **Next Recommended Task:** Proceed to **Phase 2: First explorable environment** (Verdant Reach greybox terrain with elevation contours, water streams/ponds, biome boundaries, minimap view with player cursor, and fog-of-war discovery system).
