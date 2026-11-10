@@ -46,11 +46,11 @@ Your answers will be recorded here to serve as the project baseline before proce
 ---
 
 ## 5. Repository & Version Control Initialization
-- **Context:** The directory currently is not a Git repository.
+- **Context:** The directory was initialized as a git repository by the user and connected to `origin`.
 - **Question:** Should we initialize a local Git repository (`git init`) during Phase 0 with a robust `.gitignore` (for node_modules, dist, .DS_Store, etc.) and commit milestone phases?
-- **Recommendation:** Yes, initialize Git and commit at the completion of each verified phase.
-- **Answer:** User selected: *(Recommended) Yes: Initialize Git, add a comprehensive .gitignore, and make clean milestone commits per completed phase.*
-  - **Resolution:** Initialize a local git repository in Phase 0 with `.gitignore` configured for Vite, node_modules, dist, and OS artifacts. Create clean commits after each verified phase increment.
+- **Recommendation:** Yes, commit and push at the completion of each verified phase.
+- **Answer:** User specified: *"for the git i am adding the git repo and everything you will just add and commit and push dont need to add origin manually"*.
+  - **Resolution:** Git repository and remote origin are managed by the user. The agent will manage `.gitignore`, perform `git add`, `git commit -m "..."`, and `git push` upon completing each verified phase without modifying remote configurations.
 
 ---
 
