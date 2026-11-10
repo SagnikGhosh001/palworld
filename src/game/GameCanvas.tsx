@@ -2,12 +2,9 @@ import { useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { ThirdPersonCamera } from './player/ThirdPersonCamera';
 import { PlayerCharacter } from './player/PlayerCharacter';
-import { usePlayerStore } from './player/usePlayerStore';
-import { playerController } from './player/PlayerController';
 import { inputManager } from './player/InputManager';
 
 function EnvironmentProps() {
-  // Landmarks and obstacles to give spatial perspective while exploring
   const props = [
     { pos: [8, 0.7, -6], scale: [1.8, 1.4, 2.0], color: '#64748b' },
     { pos: [-12, 1.0, 10], scale: [2.5, 2.0, 2.8], color: '#475569' },
@@ -60,9 +57,6 @@ function EnvironmentProps() {
 
 export function GameCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const position = usePlayerStore((s) => s.position);
-  const rotationY = usePlayerStore((s) => s.rotationY);
-  const movementState = usePlayerStore((s) => s.movementState);
 
   useEffect(() => {
     if (containerRef.current) {
@@ -76,11 +70,13 @@ export function GameCanvas() {
   return (
     <div
       ref={containerRef}
+      tabIndex={0}
       style={{
         width: '100%',
         height: '100%',
         position: 'relative',
-        cursor: 'grab',
+        cursor: 'crosshair',
+        outline: 'none',
       }}
     >
       <Canvas
@@ -104,17 +100,10 @@ export function GameCanvas() {
         <fog attach="fog" args={['#0a101d', 30, 80]} />
 
         {/* Third-Person Camera Tracking Player */}
-        <ThirdPersonCamera
-          targetPosition={position}
-          onYawChange={(yaw) => playerController.setCameraYaw(yaw)}
-        />
+        <ThirdPersonCamera />
 
         {/* 3D Player Adventurer Character */}
-        <PlayerCharacter
-          position={position}
-          rotationY={rotationY}
-          movementState={movementState}
-        />
+        <PlayerCharacter />
 
         {/* Explorable Ground Terrain with Grid */}
         <gridHelper args={[120, 60, '#38bdf8', '#1e293b']} position={[0, 0.01, 0]} />

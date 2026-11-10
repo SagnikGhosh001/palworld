@@ -9,8 +9,8 @@ export class InputManager {
 
   constructor() {
     if (typeof window !== 'undefined') {
-      window.addEventListener('keydown', this.handleKeyDown);
-      window.addEventListener('keyup', this.handleKeyUp);
+      window.addEventListener('keydown', this.handleKeyDown, { passive: false });
+      window.addEventListener('keyup', this.handleKeyUp, { passive: false });
       window.addEventListener('blur', this.handleBlur);
       document.addEventListener('pointerlockchange', this.handlePointerLockChange);
     }
@@ -19,7 +19,7 @@ export class InputManager {
   public attachToElement(el: HTMLElement): void {
     this.targetElement = el;
     el.addEventListener('mousemove', this.handleMouseMove);
-    el.addEventListener('click', this.requestPointerLock);
+    el.addEventListener('mousedown', this.handleMouseDown);
   }
 
   public detach(): void {
@@ -31,25 +31,42 @@ export class InputManager {
     }
     if (this.targetElement) {
       this.targetElement.removeEventListener('mousemove', this.handleMouseMove);
-      this.targetElement.removeEventListener('click', this.requestPointerLock);
+      this.targetElement.removeEventListener('mousedown', this.handleMouseDown);
       this.targetElement = null;
     }
   }
 
   private handleKeyDown = (e: KeyboardEvent): void => {
+    // Record both code and lowercase key for cross-layout resilience
     this.keys[e.code] = true;
+    if (e.key) {
+      this.keys[e.key.toLowerCase()] = true;
+    }
+
+    // Prevent arrow keys or space from scrolling the browser window
+    if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+      e.preventDefault();
+    }
   };
 
   private handleKeyUp = (e: KeyboardEvent): void => {
     this.keys[e.code] = false;
+    if (e.key) {
+      this.keys[e.key.toLowerCase()] = false;
+    }
   };
 
   private handleBlur = (): void => {
     this.keys = {};
   };
 
-  private requestPointerLock = (): void => {
-    if (this.targetElement && document.pointerLockElement !== this.targetElement) {
+  private handleMouseDown = (e: MouseEvent): void => {
+    // Ensure the container/window is focused on click
+    if (this.targetElement) {
+      this.targetElement.focus();
+    }
+    // Right click or double-click can optionally engage pointer lock
+    if (e.button === 2 && this.targetElement && document.pointerLockElement !== this.targetElement) {
       this.targetElement.requestPointerLock?.();
     }
   };
@@ -59,20 +76,28 @@ export class InputManager {
   };
 
   private handleMouseMove = (e: MouseEvent): void => {
-    if (this.isPointerLocked || e.buttons === 1 || e.buttons === 2) {
+    // Look around either when pointer-locked OR while dragging mouse (left or right button held)
+    if (this.isPointerLocked || e.buttons > 0) {
       this.mouseDeltaX += e.movementX;
       this.mouseDeltaY += e.movementY;
     }
   };
 
   public getInput(): PlayerInput {
+    const isForward = Boolean(this.keys['KeyW'] || this.keys['w'] || this.keys['ArrowUp']);
+    const isBackward = Boolean(this.keys['KeyS'] || this.keys['s'] || this.keys['ArrowDown']);
+    const isLeft = Boolean(this.keys['KeyA'] || this.keys['a'] || this.keys['ArrowLeft']);
+    const isRight = Boolean(this.keys['KeyD'] || this.keys['d'] || this.keys['ArrowRight']);
+    const isJump = Boolean(this.keys['Space'] || this.keys[' ']);
+    const isSprint = Boolean(this.keys['ShiftLeft'] || this.keys['ShiftRight'] || this.keys['shift']);
+
     return {
-      forward: Boolean(this.keys['KeyW'] || this.keys['ArrowUp']),
-      backward: Boolean(this.keys['KeyS'] || this.keys['ArrowDown']),
-      left: Boolean(this.keys['KeyA'] || this.keys['ArrowLeft']),
-      right: Boolean(this.keys['KeyD'] || this.keys['ArrowRight']),
-      jump: Boolean(this.keys['Space']),
-      sprint: Boolean(this.keys['ShiftLeft'] || this.keys['ShiftRight']),
+      forward: isForward,
+      backward: isBackward,
+      left: isLeft,
+      right: isRight,
+      jump: isJump,
+      sprint: isSprint,
     };
   }
 

@@ -1,14 +1,11 @@
-import { useRef, useEffect } from 'react';
+import { useRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { inputManager } from './InputManager';
+import { playerController } from './PlayerController';
+import { usePlayerStore } from './usePlayerStore';
 
-interface ThirdPersonCameraProps {
-  targetPosition: [number, number, number];
-  onYawChange?: (yaw: number) => void;
-}
-
-export function ThirdPersonCamera({ targetPosition, onYawChange }: ThirdPersonCameraProps) {
+export function ThirdPersonCamera() {
   const { camera } = useThree();
 
   // Spherical camera orbit state
@@ -17,10 +14,6 @@ export function ThirdPersonCamera({ targetPosition, onYawChange }: ThirdPersonCa
   const distance = useRef(5.5); // meters behind player
   const currentLookAt = useRef(new THREE.Vector3(0, 1.2, 0));
   const currentCamPos = useRef(new THREE.Vector3(0, 2.5, 6));
-
-  useEffect(() => {
-    onYawChange?.(yaw.current);
-  }, [onYawChange]);
 
   useFrame((_, delta) => {
     // 1. Process mouse look input
@@ -34,14 +27,15 @@ export function ThirdPersonCamera({ targetPosition, onYawChange }: ThirdPersonCa
       pitch.current = Math.max(-0.15, Math.min(Math.PI / 2.3, pitch.current));
 
       // Notify kinematics of new camera yaw
-      onYawChange?.(yaw.current);
+      playerController.setCameraYaw(yaw.current);
     }
 
-    // 2. Compute desired target look-at point (player chest/head height)
+    // 2. Compute desired target look-at point directly from player store
+    const playerPos = usePlayerStore.getState().position;
     const targetLookAt = new THREE.Vector3(
-      targetPosition[0],
-      targetPosition[1] + 1.2,
-      targetPosition[2]
+      playerPos[0],
+      playerPos[1] + 1.2,
+      playerPos[2]
     );
 
     // Smoothly lag lookAt position

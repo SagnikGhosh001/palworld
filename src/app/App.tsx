@@ -5,23 +5,55 @@ import { GameLoop } from '@/game/core/GameLoop';
 import { playerController } from '@/game/player/PlayerController';
 import { usePlayerStore } from '@/game/player/usePlayerStore';
 import { soundFx } from '@/game/audio/AudioSynthesizer';
+import { MovementState } from '@/game/player/player.types';
 
 export function App() {
   const [audioMuted, setAudioMuted] = useState(false);
-  const position = usePlayerStore((s) => s.position);
-  const velocity = usePlayerStore((s) => s.velocity);
-  const movementState = usePlayerStore((s) => s.movementState);
-  const stamina = usePlayerStore((s) => s.stats.currentStamina);
-  const maxStamina = usePlayerStore((s) => s.stats.maxStamina);
+  const [hudState, setHudState] = useState<{
+    pos: [number, number, number];
+    speed: string;
+    state: MovementState;
+    staminaPct: number;
+  }>({
+    pos: [0, 0, 0],
+    speed: '0.0',
+    state: 'IDLE',
+    staminaPct: 100,
+  });
+
   const resetPosition = usePlayerStore((s) => s.resetPosition);
 
   useEffect(() => {
     const loop = new GameLoop(60);
     const unregisterPlayer = playerController.registerWithLoop(loop);
+
+    // Register a throttled HUD updater in the game loop (~15Hz UI update, saves CPU & avoids React thrashing)
+    let frameCount = 0;
+    const unregisterHud = loop.registerSystem(() => {
+      frameCount++;
+      if (frameCount % 4 === 0) {
+        const s = usePlayerStore.getState();
+        const spd = Math.sqrt(s.velocity[0] ** 2 + s.velocity[2] ** 2).toFixed(1);
+        const pct = Math.max(0, Math.min(100, (s.stats.currentStamina / s.stats.maxStamina) * 100));
+
+        setHudState({
+          pos: [
+            parseFloat(s.position[0].toFixed(1)),
+            parseFloat(s.position[1].toFixed(1)),
+            parseFloat(s.position[2].toFixed(1)),
+          ],
+          speed: spd,
+          state: s.movementState,
+          staminaPct: pct,
+        });
+      }
+    });
+
     loop.start();
 
     return () => {
       unregisterPlayer();
+      unregisterHud();
       loop.stop();
     };
   }, []);
@@ -34,9 +66,6 @@ export function App() {
       soundFx.playUiClick();
     }
   };
-
-  const speed = Math.sqrt(velocity[0] * velocity[0] + velocity[2] * velocity[2]).toFixed(1);
-  const staminaPct = Math.max(0, Math.min(100, (stamina / maxStamina) * 100));
 
   const stateColors: Record<string, string> = {
     IDLE: '#94a3b8',
@@ -85,17 +114,17 @@ export function App() {
               CREATUREBOUND
             </h1>
             <span style={{ fontSize: '11px', background: '#0284c7', color: '#fff', padding: '2px 6px', borderRadius: '4px' }}>
-              Phase 1 Movement Prototype
+              Phase 1 Movement Active
             </span>
           </div>
 
           <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: '#94a3b8' }}>
             <span>
-              Pos: [{position[0].toFixed(1)}, {position[1].toFixed(1)}, {position[2].toFixed(1)}]
+              Pos: [{hudState.pos[0].toFixed(1)}, {hudState.pos[1].toFixed(1)}, {hudState.pos[2].toFixed(1)}]
             </span>
-            <span>Speed: {speed} m/s</span>
-            <span style={{ color: stateColors[movementState] || '#e2e8f0', fontWeight: 'bold' }}>
-              {movementState}
+            <span>Speed: {hudState.speed} m/s</span>
+            <span style={{ color: stateColors[hudState.state] || '#e2e8f0', fontWeight: 'bold' }}>
+              {hudState.state}
             </span>
           </div>
         </header>
@@ -128,9 +157,9 @@ export function App() {
           >
             <div
               style={{
-                width: `${staminaPct}%`,
+                width: `${hudState.staminaPct}%`,
                 height: '100%',
-                background: staminaPct < 20 ? '#ef4444' : 'linear-gradient(90deg, #eab308, #f59e0b)',
+                background: hudState.staminaPct < 20 ? '#ef4444' : 'linear-gradient(90deg, #eab308, #f59e0b)',
                 transition: 'width 0.08s linear',
               }}
             />
@@ -158,7 +187,7 @@ export function App() {
             <span>•</span>
             <span><strong>Space</strong> Jump</span>
             <span>•</span>
-            <span><strong>Click/Drag</strong> Look</span>
+            <span><strong>Click & Drag</strong> Look</span>
             <span>•</span>
             <button
               onClick={resetPosition}

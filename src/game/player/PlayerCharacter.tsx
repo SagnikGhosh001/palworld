@@ -1,15 +1,9 @@
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { MovementState } from './player.types';
+import { usePlayerStore } from './usePlayerStore';
 
-interface PlayerCharacterProps {
-  position: [number, number, number];
-  rotationY: number;
-  movementState: MovementState;
-}
-
-export function PlayerCharacter({ position, rotationY, movementState }: PlayerCharacterProps) {
+export function PlayerCharacter() {
   const groupRef = useRef<THREE.Group>(null);
   const leftLegRef = useRef<THREE.Mesh>(null);
   const rightLegRef = useRef<THREE.Mesh>(null);
@@ -21,6 +15,12 @@ export function PlayerCharacter({ position, rotationY, movementState }: PlayerCh
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
+
+    // Read directly from store without forcing React component re-renders
+    const state = usePlayerStore.getState();
+    const position = state.position;
+    const rotationY = state.rotationY;
+    const movementState = state.movementState;
 
     // Smooth position and rotation
     groupRef.current.position.set(position[0], position[1], position[2]);
