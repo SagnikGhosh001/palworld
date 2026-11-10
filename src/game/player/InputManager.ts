@@ -5,82 +5,106 @@ export class InputManager {
   private mouseDeltaX = 0;
   private mouseDeltaY = 0;
   private isPointerLocked = false;
+  private isMouseDown = false;
   private targetElement: HTMLElement | null = null;
+  private isAttached = false;
 
   constructor() {
-    if (typeof window !== 'undefined') {
-      window.addEventListener('keydown', this.handleKeyDown, { passive: false });
-      window.addEventListener('keyup', this.handleKeyUp, { passive: false });
-      window.addEventListener('blur', this.handleBlur);
-      document.addEventListener('pointerlockchange', this.handlePointerLockChange);
-    }
+    // Automatically attach window listeners on creation
+    this.attach();
   }
 
-  public attachToElement(el: HTMLElement): void {
-    this.targetElement = el;
-    el.addEventListener('mousemove', this.handleMouseMove);
-    el.addEventListener('mousedown', this.handleMouseDown);
+  public attach(el?: HTMLElement): void {
+    if (el) {
+      this.targetElement = el;
+      el.addEventListener('mousedown', this.handleMouseDown);
+    }
+
+    if (typeof window !== 'undefined' && !this.isAttached) {
+      window.addEventListener('keydown', this.handleKeyDown, { passive: false });
+      window.addEventListener('keyup', this.handleKeyUp, { passive: false });
+      window.addEventListener('mousemove', this.handleMouseMove);
+      window.addEventListener('mouseup', this.handleMouseUp);
+      document.addEventListener('pointerlockchange', this.handlePointerLockChange);
+      document.addEventListener('visibilitychange', this.handleVisibilityChange);
+      this.isAttached = true;
+    }
   }
 
   public detach(): void {
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('keydown', this.handleKeyDown);
-      window.removeEventListener('keyup', this.handleKeyUp);
-      window.removeEventListener('blur', this.handleBlur);
-      document.removeEventListener('pointerlockchange', this.handlePointerLockChange);
-    }
     if (this.targetElement) {
-      this.targetElement.removeEventListener('mousemove', this.handleMouseMove);
       this.targetElement.removeEventListener('mousedown', this.handleMouseDown);
       this.targetElement = null;
     }
+
+    if (typeof window !== 'undefined' && this.isAttached) {
+      window.removeEventListener('keydown', this.handleKeyDown);
+      window.removeEventListener('keyup', this.handleKeyUp);
+      window.removeEventListener('mousemove', this.handleMouseMove);
+      window.removeEventListener('mouseup', this.handleMouseUp);
+      document.removeEventListener('pointerlockchange', this.handlePointerLockChange);
+      document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+      this.isAttached = false;
+    }
+
+    this.keys = {};
+    this.isMouseDown = false;
   }
 
   private handleKeyDown = (e: KeyboardEvent): void => {
-    // Record both code and lowercase key for cross-layout resilience
-    this.keys[e.code] = true;
-    if (e.key) {
-      this.keys[e.key.toLowerCase()] = true;
+    // Prevent default scrolling on game navigation keys
+    if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code) || e.key === ' ') {
+      e.preventDefault();
     }
 
-    // Prevent arrow keys or space from scrolling the browser window
-    if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
-      e.preventDefault();
+    if (e.code) {
+      this.keys[e.code] = true;
+    }
+    if (e.key) {
+      this.keys[e.key.toLowerCase()] = true;
     }
   };
 
   private handleKeyUp = (e: KeyboardEvent): void => {
-    this.keys[e.code] = false;
+    if (e.code) {
+      this.keys[e.code] = false;
+    }
     if (e.key) {
       this.keys[e.key.toLowerCase()] = false;
     }
   };
 
-  private handleBlur = (): void => {
-    this.keys = {};
+  private handleVisibilityChange = (): void => {
+    if (document.hidden) {
+      this.keys = {};
+      this.isMouseDown = false;
+    }
   };
 
   private handleMouseDown = (e: MouseEvent): void => {
-    // Ensure the container/window is focused on click
+    this.isMouseDown = true;
     if (this.targetElement) {
       this.targetElement.focus();
     }
-    // Right click or double-click can optionally engage pointer lock
+    // Right-click requests pointer lock for immersive camera look
     if (e.button === 2 && this.targetElement && document.pointerLockElement !== this.targetElement) {
       this.targetElement.requestPointerLock?.();
     }
   };
 
-  private handlePointerLockChange = (): void => {
-    this.isPointerLocked = document.pointerLockElement === this.targetElement;
+  private handleMouseUp = (): void => {
+    this.isMouseDown = false;
   };
 
   private handleMouseMove = (e: MouseEvent): void => {
-    // Look around either when pointer-locked OR while dragging mouse (left or right button held)
-    if (this.isPointerLocked || e.buttons > 0) {
+    if (this.isPointerLocked || this.isMouseDown || e.buttons > 0) {
       this.mouseDeltaX += e.movementX;
       this.mouseDeltaY += e.movementY;
     }
+  };
+
+  private handlePointerLockChange = (): void => {
+    this.isPointerLocked = document.pointerLockElement === this.targetElement;
   };
 
   public getInput(): PlayerInput {
@@ -110,6 +134,10 @@ export class InputManager {
 
   public isLocked(): boolean {
     return this.isPointerLocked;
+  }
+
+  public getActiveKeys(): string[] {
+    return Object.keys(this.keys).filter((k) => this.keys[k]);
   }
 }
 

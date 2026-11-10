@@ -59,9 +59,7 @@ export function GameCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (containerRef.current) {
-      inputManager.attachToElement(containerRef.current);
-    }
+    inputManager.attach(containerRef.current || undefined);
     return () => {
       inputManager.detach();
     };

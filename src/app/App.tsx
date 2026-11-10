@@ -4,6 +4,7 @@ import { ErrorBoundary } from '@/app/ErrorBoundary';
 import { GameLoop } from '@/game/core/GameLoop';
 import { playerController } from '@/game/player/PlayerController';
 import { usePlayerStore } from '@/game/player/usePlayerStore';
+import { inputManager } from '@/game/player/InputManager';
 import { soundFx } from '@/game/audio/AudioSynthesizer';
 import { MovementState } from '@/game/player/player.types';
 
@@ -14,11 +15,13 @@ export function App() {
     speed: string;
     state: MovementState;
     staminaPct: number;
+    activeKeys: string[];
   }>({
     pos: [0, 0, 0],
     speed: '0.0',
     state: 'IDLE',
     staminaPct: 100,
+    activeKeys: [],
   });
 
   const resetPosition = usePlayerStore((s) => s.resetPosition);
@@ -27,11 +30,10 @@ export function App() {
     const loop = new GameLoop(60);
     const unregisterPlayer = playerController.registerWithLoop(loop);
 
-    // Register a throttled HUD updater in the game loop (~15Hz UI update, saves CPU & avoids React thrashing)
     let frameCount = 0;
     const unregisterHud = loop.registerSystem(() => {
       frameCount++;
-      if (frameCount % 4 === 0) {
+      if (frameCount % 3 === 0) {
         const s = usePlayerStore.getState();
         const spd = Math.sqrt(s.velocity[0] ** 2 + s.velocity[2] ** 2).toFixed(1);
         const pct = Math.max(0, Math.min(100, (s.stats.currentStamina / s.stats.maxStamina) * 100));
@@ -45,6 +47,7 @@ export function App() {
           speed: spd,
           state: s.movementState,
           staminaPct: pct,
+          activeKeys: inputManager.getActiveKeys(),
         });
       }
     });
@@ -126,6 +129,30 @@ export function App() {
             <span style={{ color: stateColors[hudState.state] || '#e2e8f0', fontWeight: 'bold' }}>
               {hudState.state}
             </span>
+          </div>
+
+          {/* Real-time Keyboard Detection Feedback */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#64748b' }}>
+            <span>Keys Detected:</span>
+            {hudState.activeKeys.length === 0 ? (
+              <span style={{ color: '#475569' }}>None (click canvas & press WASD)</span>
+            ) : (
+              hudState.activeKeys.map((k) => (
+                <span
+                  key={k}
+                  style={{
+                    background: '#1e293b',
+                    color: '#38bdf8',
+                    border: '1px solid #0284c7',
+                    borderRadius: '3px',
+                    padding: '1px 5px',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  {k}
+                </span>
+              ))
+            )}
           </div>
         </header>
 
