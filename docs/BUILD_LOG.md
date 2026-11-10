@@ -75,4 +75,27 @@ This log records every incremental development phase, commands executed, automat
   - `npm test` (`vitest run`) -> 7 test suites, 26 tests passed in 348ms.
   - `npm run build` (`tsc --noEmit && vite build`) -> Production bundle built in 643ms without errors.
 - **Known Issues:** None.
-- **Next Recommended Task:** Proceed to **Phase 3: Creature foundation** (define core Creature data models, build 6 original starter species, add spawn zones/population caps, implement wander/investigate/flee/return AI behaviors, target selection HUD, and creature journal discovery).
+- **Next Recommended Task:** Proceed to **Phase 3: Creature foundation**.
+
+---
+
+## Phase 3: Creature Foundation
+- **Date:** 2026-11-10
+- **Status:** Complete (Verified)
+- **Increment Goal:** Establish creature foundation with complete data contracts, 6 original starter species, habitat spawn zones with population caps, autonomous creature AI state machine (`IDLE`, `WANDER`, `INVESTIGATE`, `FLEE`, `RETURN`), procedural 3D creature models with animations, target HUD, and creature field journal.
+- **Completed Tasks:**
+  - [x] Defined typed creature contracts in `src/game/creatures/creature.types.ts` (elements, rarity, temperaments, base stats, work skills, signature abilities, AI states).
+  - [x] Implemented data-driven starter species registry in `src/game/content/creatures/speciesRegistry.ts` (Mosskin, Cindercub, Pebblit, Ripplefin, Voltkit, Glimmerowl) and 6 regional spawn zones.
+  - [x] Developed headless creature AI state machine in `src/game/creatures/ai/CreatureAI.ts` with temperament behaviors (curious investigation, passive fleeing, territory bounding, terrain-clamped wandering).
+  - [x] Built habitat spawner in `src/game/creatures/CreatureSpawner.ts` enforcing zone population caps and randomized levels.
+  - [x] Created stylized compound procedural 3D meshes for all 6 species in `src/game/creatures/procedural/CreatureMesh.tsx` with speed-adaptive walking swings and breathing animations.
+  - [x] Built reactive creature cluster in `src/game/creatures/CreatureWorld.tsx` with proximity auto-discovery and distance-based targeting.
+  - [x] Built `src/ui/hud/TargetHUD.tsx` displaying name, level, element badge, distance, health bar, and AI state of targeted wild creatures.
+  - [x] Built `src/ui/journal/CreatureJournalModal.tsx` (`J` hotkey) displaying discovered vs unknown species, lore, habitats, base stats, and signature abilities.
+  - [x] Added automated unit test suites: `SpeciesRegistry.test.ts` (3 tests), `CreatureAI.test.ts` (4 tests), and `CreatureSpawner.test.ts` (2 tests).
+- **Commands Run & Verified:**
+  - `npm run typecheck` (`tsc --noEmit`) -> Passed with 0 errors.
+  - `npm test` (`vitest run`) -> 10 test suites, 37 tests passed in 403ms.
+  - `npm run build` (`tsc --noEmit && vite build`) -> Production bundle built in 755ms with 0 errors.
+- **Known Issues:** None.
+- **Next Recommended Task:** Proceed to **Phase 4: Catching and collection** (craftable capture devices, capture formula based on health ratio & rarity, throw animation/projectile, active party roster, owned creature storage box, and collection persistence).

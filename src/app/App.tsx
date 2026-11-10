@@ -8,9 +8,16 @@ import { inputManager } from '@/game/player/InputManager';
 import { soundFx } from '@/game/audio/AudioSynthesizer';
 import { MovementState } from '@/game/player/player.types';
 import { Minimap } from '@/ui/minimap/Minimap';
+import { TargetHUD } from '@/ui/hud/TargetHUD';
+import { CreatureJournalModal } from '@/ui/journal/CreatureJournalModal';
+import { useJournalStore } from '@/game/journal/useJournalStore';
 
 export function App() {
   const [audioMuted, setAudioMuted] = useState(false);
+  const [isJournalOpen, setIsJournalOpen] = useState(false);
+  const recentlyDiscovered = useJournalStore((s) => s.recentlyDiscovered);
+  const clearNotification = useJournalStore((s) => s.clearNotification);
+
   const [hudState, setHudState] = useState<{
     pos: [number, number, number];
     speed: string;
@@ -28,6 +35,27 @@ export function App() {
   });
 
   const resetPosition = usePlayerStore((s) => s.resetPosition);
+
+  // Toggle Creature Journal on 'J'
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'KeyJ' || e.key === 'j' || e.key === 'J') {
+        setIsJournalOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Auto-dismiss discovery banner after 4.5s
+  useEffect(() => {
+    if (recentlyDiscovered) {
+      const timer = setTimeout(() => {
+        clearNotification();
+      }, 4500);
+      return () => clearTimeout(timer);
+    }
+  }, [recentlyDiscovered, clearNotification]);
 
   useEffect(() => {
     const loop = new GameLoop(60);
@@ -91,6 +119,40 @@ export function App() {
         {/* Real-time Minimap & Fog-of-War Radar */}
         <Minimap playerYaw={hudState.rotationY} />
 
+        {/* Target HUD for nearby Creatures */}
+        <TargetHUD />
+
+        {/* Creature Field Journal Modal */}
+        <CreatureJournalModal isOpen={isJournalOpen} onClose={() => setIsJournalOpen(false)} />
+
+        {/* New Creature Discovered Banner Notification */}
+        {recentlyDiscovered && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 90,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.95), rgba(16, 185, 129, 0.95))',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.6), 0 0 20px rgba(56, 189, 248, 0.5)',
+              borderRadius: '24px',
+              padding: '10px 24px',
+              color: '#ffffff',
+              fontFamily: 'sans-serif',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              zIndex: 40,
+              animation: 'bounce 0.5s ease',
+            }}
+          >
+            <span>✨</span>
+            <span>New Species Discovered: <strong>{recentlyDiscovered}</strong>! Added to Journal [J]</span>
+          </div>
+        )}
+
         {/* Top-Left Header & Diagnostics */}
         <header
           style={{
@@ -124,7 +186,7 @@ export function App() {
               CREATUREBOUND
             </h1>
             <span style={{ fontSize: '11px', background: '#059669', color: '#fff', padding: '2px 6px', borderRadius: '4px' }}>
-              Phase 2: Verdant Reach
+              Phase 3: Creatures Active
             </span>
           </div>
 
@@ -138,7 +200,6 @@ export function App() {
             </span>
           </div>
 
-          {/* Real-time Keyboard Detection Feedback */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#64748b' }}>
             <span>Keys:</span>
             {hudState.activeKeys.length === 0 ? (
@@ -223,8 +284,21 @@ export function App() {
             <span>•</span>
             <span><strong>Mouse</strong> Free Look</span>
             <span>•</span>
-            <span><strong>M</strong> Zoom Map</span>
-            <span>•</span>
+            <button
+              onClick={() => setIsJournalOpen(true)}
+              style={{
+                background: '#0284c7',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '3px 10px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '11px',
+              }}
+            >
+              📖 Journal [J]
+            </button>
             <button
               onClick={resetPosition}
               style={{

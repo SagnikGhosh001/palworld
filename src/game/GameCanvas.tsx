@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { ThirdPersonCamera } from './player/ThirdPersonCamera';
 import { PlayerCharacter } from './player/PlayerCharacter';
+import { CreatureWorld } from './creatures/CreatureWorld';
 import { inputManager } from './player/InputManager';
 import { VerdantTerrain } from './world/terrain/VerdantTerrain';
 import { VerdantLandmarks } from './world/landmarks/VerdantLandmarks';
@@ -42,6 +43,9 @@ export function GameCanvas() {
 
         {/* 3D Player Adventurer Character */}
         <PlayerCharacter />
+
+        {/* Autonomous 3D Wild Creatures Cluster */}
+        <CreatureWorld />
 
         {/* Contoured Verdant Reach Meadow Terrain & Water */}
         <VerdantTerrain />
