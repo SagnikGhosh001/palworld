@@ -5,26 +5,26 @@ export class InputManager {
   private mouseDeltaX = 0;
   private mouseDeltaY = 0;
   private isPointerLocked = false;
-  private isMouseDown = false;
+  private isOverCanvas = true; // Default true so movement starts immediately
   private targetElement: HTMLElement | null = null;
   private isAttached = false;
 
   constructor() {
-    // Automatically attach window listeners on creation
     this.attach();
   }
 
   public attach(el?: HTMLElement): void {
     if (el) {
       this.targetElement = el;
-      el.addEventListener('mousedown', this.handleMouseDown);
+      el.addEventListener('mouseenter', this.handleMouseEnter);
+      el.addEventListener('mouseleave', this.handleMouseLeave);
+      el.addEventListener('click', this.handleClick);
     }
 
     if (typeof window !== 'undefined' && !this.isAttached) {
       window.addEventListener('keydown', this.handleKeyDown, { passive: false });
       window.addEventListener('keyup', this.handleKeyUp, { passive: false });
       window.addEventListener('mousemove', this.handleMouseMove);
-      window.addEventListener('mouseup', this.handleMouseUp);
       document.addEventListener('pointerlockchange', this.handlePointerLockChange);
       document.addEventListener('visibilitychange', this.handleVisibilityChange);
       this.isAttached = true;
@@ -33,7 +33,9 @@ export class InputManager {
 
   public detach(): void {
     if (this.targetElement) {
-      this.targetElement.removeEventListener('mousedown', this.handleMouseDown);
+      this.targetElement.removeEventListener('mouseenter', this.handleMouseEnter);
+      this.targetElement.removeEventListener('mouseleave', this.handleMouseLeave);
+      this.targetElement.removeEventListener('click', this.handleClick);
       this.targetElement = null;
     }
 
@@ -41,18 +43,35 @@ export class InputManager {
       window.removeEventListener('keydown', this.handleKeyDown);
       window.removeEventListener('keyup', this.handleKeyUp);
       window.removeEventListener('mousemove', this.handleMouseMove);
-      window.removeEventListener('mouseup', this.handleMouseUp);
       document.removeEventListener('pointerlockchange', this.handlePointerLockChange);
       document.removeEventListener('visibilitychange', this.handleVisibilityChange);
       this.isAttached = false;
     }
 
     this.keys = {};
-    this.isMouseDown = false;
   }
 
+  private handleMouseEnter = (): void => {
+    this.isOverCanvas = true;
+  };
+
+  private handleMouseLeave = (): void => {
+    if (!this.isPointerLocked) {
+      this.isOverCanvas = false;
+    }
+  };
+
+  private handleClick = (): void => {
+    if (this.targetElement) {
+      this.targetElement.focus();
+      // Optional seamless pointer lock on click for continuous 360 rotation
+      if (document.pointerLockElement !== this.targetElement) {
+        this.targetElement.requestPointerLock?.();
+      }
+    }
+  };
+
   private handleKeyDown = (e: KeyboardEvent): void => {
-    // Prevent default scrolling on game navigation keys
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code) || e.key === ' ') {
       e.preventDefault();
     }
@@ -77,27 +96,12 @@ export class InputManager {
   private handleVisibilityChange = (): void => {
     if (document.hidden) {
       this.keys = {};
-      this.isMouseDown = false;
     }
-  };
-
-  private handleMouseDown = (e: MouseEvent): void => {
-    this.isMouseDown = true;
-    if (this.targetElement) {
-      this.targetElement.focus();
-    }
-    // Right-click requests pointer lock for immersive camera look
-    if (e.button === 2 && this.targetElement && document.pointerLockElement !== this.targetElement) {
-      this.targetElement.requestPointerLock?.();
-    }
-  };
-
-  private handleMouseUp = (): void => {
-    this.isMouseDown = false;
   };
 
   private handleMouseMove = (e: MouseEvent): void => {
-    if (this.isPointerLocked || this.isMouseDown || e.buttons > 0) {
+    // Free mouse look: rotates whenever pointer-locked OR moving over the canvas without any click or drag!
+    if (this.isPointerLocked || this.isOverCanvas) {
       this.mouseDeltaX += e.movementX;
       this.mouseDeltaY += e.movementY;
     }
@@ -105,6 +109,9 @@ export class InputManager {
 
   private handlePointerLockChange = (): void => {
     this.isPointerLocked = document.pointerLockElement === this.targetElement;
+    if (this.isPointerLocked) {
+      this.isOverCanvas = true;
+    }
   };
 
   public getInput(): PlayerInput {

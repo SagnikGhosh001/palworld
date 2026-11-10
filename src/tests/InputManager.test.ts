@@ -51,4 +51,23 @@ describe('InputManager', () => {
 
     input.detach();
   });
+
+  it('accumulates mouse look delta without requiring mouse clicks or dragging', () => {
+    const input = new InputManager();
+    input.attach();
+
+    // Fire mousemove with zero buttons pressed
+    window.dispatchEvent(new MouseEvent('mousemove', { movementX: 15, movementY: -8, buttons: 0 }));
+
+    const delta = input.consumeMouseDelta();
+    expect(delta.x).toBe(15);
+    expect(delta.y).toBe(-8);
+
+    // Delta should be reset after consuming
+    const secondDelta = input.consumeMouseDelta();
+    expect(secondDelta.x).toBe(0);
+    expect(secondDelta.y).toBe(0);
+
+    input.detach();
+  });
 });

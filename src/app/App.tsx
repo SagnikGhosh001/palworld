@@ -221,6 +221,8 @@ export function App() {
             <span>•</span>
             <span><strong>Space</strong> Jump</span>
             <span>•</span>
+            <span><strong>Mouse</strong> Free Look</span>
+            <span>•</span>
             <span><strong>M</strong> Zoom Map</span>
             <span>•</span>
             <button
