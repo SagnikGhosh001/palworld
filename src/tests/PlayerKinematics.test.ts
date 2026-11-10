@@ -47,6 +47,22 @@ describe('PlayerKinematics', () => {
     expect(state.movementState).toBe('WALKING');
     expect(state.velocity[2]).toBeLessThan(-1.0);
     expect(state.position[2]).toBeLessThan(0);
+    // Player must face forward towards -Z (0 rad), NOT backwards towards camera
+    expect(Math.abs(state.rotationY)).toBeLessThan(0.1);
+  });
+
+  it('faces correctly in all 4 cardinal movement directions', () => {
+    const forward = PlayerKinematics.update(createInitialState(), { ...emptyInput, forward: true }, 0, 1.0);
+    expect(forward.rotationY).toBeCloseTo(0, 1);
+
+    const right = PlayerKinematics.update(createInitialState(), { ...emptyInput, right: true }, 0, 1.0);
+    expect(right.rotationY).toBeCloseTo(-Math.PI / 2, 1);
+
+    const left = PlayerKinematics.update(createInitialState(), { ...emptyInput, left: true }, 0, 1.0);
+    expect(left.rotationY).toBeCloseTo(Math.PI / 2, 1);
+
+    const backward = PlayerKinematics.update(createInitialState(), { ...emptyInput, backward: true }, 0, 1.0);
+    expect(Math.abs(backward.rotationY)).toBeCloseTo(Math.PI, 1);
   });
 
   it('normalizes diagonal input to prevent speed exploit', () => {

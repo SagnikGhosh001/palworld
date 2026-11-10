@@ -84,8 +84,8 @@ export class PlayerKinematics {
       targetVelX = (normX * cosYaw + normZ * sinYaw) * currentSpeed;
       targetVelZ = (-normX * sinYaw + normZ * cosYaw) * currentSpeed;
 
-      // Rotate player towards movement vector
-      const desiredAngle = Math.atan2(targetVelX, targetVelZ);
+      // Rotate player towards movement vector (-Z is forward in Three.js coordinates)
+      const desiredAngle = Math.atan2(-targetVelX, -targetVelZ);
       nextState.rotationY = this.lerpAngle(nextState.rotationY, desiredAngle, Math.min(1, delta * 14));
     }
 
