@@ -9,14 +9,23 @@ import { soundFx } from '@/game/audio/AudioSynthesizer';
 import { MovementState } from '@/game/player/player.types';
 import { Minimap } from '@/ui/minimap/Minimap';
 import { TargetHUD } from '@/ui/hud/TargetHUD';
+import { CaptureHUD } from '@/ui/hud/CaptureHUD';
+import { PartyHUD } from '@/ui/party/PartyHUD';
+import { PartyManagementModal } from '@/ui/party/PartyManagementModal';
 import { CreatureJournalModal } from '@/ui/journal/CreatureJournalModal';
 import { useJournalStore } from '@/game/journal/useJournalStore';
+import { usePartyStore } from '@/game/capture/usePartyStore';
+import { captureSystem } from '@/game/capture/CaptureSystem';
 
 export function App() {
   const [audioMuted, setAudioMuted] = useState(false);
   const [isJournalOpen, setIsJournalOpen] = useState(false);
+  const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
+  const [captureToast, setCaptureToast] = useState<{ text: string; success: boolean } | null>(null);
+
   const recentlyDiscovered = useJournalStore((s) => s.recentlyDiscovered);
   const clearNotification = useJournalStore((s) => s.clearNotification);
+  const loadPersistedData = usePartyStore((s) => s.loadPersistedData);
 
   const [hudState, setHudState] = useState<{
     pos: [number, number, number];
@@ -36,18 +45,26 @@ export function App() {
 
   const resetPosition = usePlayerStore((s) => s.resetPosition);
 
-  // Toggle Creature Journal on 'J'
+  // Initialize saved party data from IndexedDB
+  useEffect(() => {
+    loadPersistedData();
+  }, [loadPersistedData]);
+
+  // Toggle Creature Journal on 'J' and Party on 'Tab'
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'KeyJ' || e.key === 'j' || e.key === 'J') {
         setIsJournalOpen((prev) => !prev);
+      } else if (e.code === 'Tab') {
+        e.preventDefault();
+        setIsPartyModalOpen((prev) => !prev);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Auto-dismiss discovery banner after 4.5s
+  // Auto-dismiss discovery banner
   useEffect(() => {
     if (recentlyDiscovered) {
       const timer = setTimeout(() => {
@@ -57,9 +74,17 @@ export function App() {
     }
   }, [recentlyDiscovered, clearNotification]);
 
+  // Fixed timestep headless simulation loop
   useEffect(() => {
     const loop = new GameLoop(60);
     const unregisterPlayer = playerController.registerWithLoop(loop);
+
+    // Register capture projectile update
+    const unregisterCapture = loop.registerSystem((delta: number) => {
+      captureSystem.update(delta);
+      const msg = captureSystem.getCaptureMessage();
+      setCaptureToast(msg);
+    });
 
     let frameCount = 0;
     const unregisterHud = loop.registerSystem(() => {
@@ -88,6 +113,7 @@ export function App() {
 
     return () => {
       unregisterPlayer();
+      unregisterCapture();
       unregisterHud();
       loop.stop();
     };
@@ -122,15 +148,51 @@ export function App() {
         {/* Target HUD for nearby Creatures */}
         <TargetHUD />
 
-        {/* Creature Field Journal Modal */}
-        <CreatureJournalModal isOpen={isJournalOpen} onClose={() => setIsJournalOpen(false)} />
+        {/* In-Encounter Capsule Throw HUD */}
+        <CaptureHUD />
 
-        {/* New Creature Discovered Banner Notification */}
-        {recentlyDiscovered && (
+        {/* Active Party companion roster HUD */}
+        <PartyHUD onOpenManagement={() => setIsPartyModalOpen(true)} />
+
+        {/* Modals */}
+        <CreatureJournalModal isOpen={isJournalOpen} onClose={() => setIsJournalOpen(false)} />
+        <PartyManagementModal isOpen={isPartyModalOpen} onClose={() => setIsPartyModalOpen(false)} />
+
+        {/* Capture Outcome Toast Banner */}
+        {captureToast && (
           <div
             style={{
               position: 'absolute',
-              top: 90,
+              top: 80,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: captureToast.success
+                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(2, 132, 199, 0.95))'
+                : 'linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(185, 28, 28, 0.95))',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.6)',
+              borderRadius: '24px',
+              padding: '10px 24px',
+              color: '#ffffff',
+              fontFamily: 'sans-serif',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              zIndex: 45,
+            }}
+          >
+            <span>{captureToast.success ? '🎉' : '⚠️'}</span>
+            <span>{captureToast.text}</span>
+          </div>
+        )}
+
+        {/* New Creature Discovered Banner Notification */}
+        {recentlyDiscovered && !captureToast && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 80,
               left: '50%',
               transform: 'translateX(-50%)',
               background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.95), rgba(16, 185, 129, 0.95))',
@@ -145,7 +207,6 @@ export function App() {
               alignItems: 'center',
               gap: '10px',
               zIndex: 40,
-              animation: 'bounce 0.5s ease',
             }}
           >
             <span>✨</span>
@@ -185,8 +246,8 @@ export function App() {
             <h1 style={{ fontSize: '15px', fontWeight: 700, letterSpacing: '0.05em', color: '#f8fafc', margin: 0 }}>
               CREATUREBOUND
             </h1>
-            <span style={{ fontSize: '11px', background: '#059669', color: '#fff', padding: '2px 6px', borderRadius: '4px' }}>
-              Phase 3: Creatures Active
+            <span style={{ fontSize: '11px', background: '#0284c7', color: '#fff', padding: '2px 6px', borderRadius: '4px' }}>
+              Phase 4: Catching Active
             </span>
           </div>
 
@@ -282,10 +343,10 @@ export function App() {
             <span>•</span>
             <span><strong>Space</strong> Jump</span>
             <span>•</span>
-            <span><strong>Mouse</strong> Free Look</span>
+            <span><strong>R</strong> Throw Capsule</span>
             <span>•</span>
             <button
-              onClick={() => setIsJournalOpen(true)}
+              onClick={() => setIsPartyModalOpen(true)}
               style={{
                 background: '#0284c7',
                 color: '#ffffff',
@@ -297,13 +358,27 @@ export function App() {
                 fontSize: '11px',
               }}
             >
+              ⚔️ Party [Tab]
+            </button>
+            <button
+              onClick={() => setIsJournalOpen(true)}
+              style={{
+                background: '#334155',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '3px 8px',
+                cursor: 'pointer',
+                fontSize: '11px',
+              }}
+            >
               📖 Journal [J]
             </button>
             <button
               onClick={resetPosition}
               style={{
-                background: '#334155',
-                color: '#f8fafc',
+                background: '#1e293b',
+                color: '#94a3b8',
                 border: 'none',
                 borderRadius: '12px',
                 padding: '3px 8px',

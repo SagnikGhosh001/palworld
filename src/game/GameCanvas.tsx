@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { ThirdPersonCamera } from './player/ThirdPersonCamera';
 import { PlayerCharacter } from './player/PlayerCharacter';
 import { CreatureWorld } from './creatures/CreatureWorld';
+import { CaptureProjectileMesh } from './capture/CaptureProjectileMesh';
 import { inputManager } from './player/InputManager';
 import { VerdantTerrain } from './world/terrain/VerdantTerrain';
 import { VerdantLandmarks } from './world/landmarks/VerdantLandmarks';
@@ -46,6 +47,9 @@ export function GameCanvas() {
 
         {/* Autonomous 3D Wild Creatures Cluster */}
         <CreatureWorld />
+
+        {/* 3D Thrown Capture Projectile & Trapping Sequence */}
+        <CaptureProjectileMesh />
 
         {/* Contoured Verdant Reach Meadow Terrain & Water */}
         <VerdantTerrain />

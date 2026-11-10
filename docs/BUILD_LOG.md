@@ -98,4 +98,26 @@ This log records every incremental development phase, commands executed, automat
   - `npm test` (`vitest run`) -> 10 test suites, 37 tests passed in 403ms.
   - `npm run build` (`tsc --noEmit && vite build`) -> Production bundle built in 755ms with 0 errors.
 - **Known Issues:** None.
-- **Next Recommended Task:** Proceed to **Phase 4: Catching and collection** (craftable capture devices, capture formula based on health ratio & rarity, throw animation/projectile, active party roster, owned creature storage box, and collection persistence).
+- **Next Recommended Task:** Proceed to **Phase 4: Catching and collection**.
+
+---
+
+## Phase 4: Catching and Collection
+- **Date:** 2026-11-11
+- **Status:** Complete (Verified)
+- **Increment Goal:** Implement complete creature capture mechanic and collection system: craftable capsule tiers, parabolic throw trajectory, 3-stage suspenseful shake animation sequence, IndexedDB-backed creature storage, active party management (max 5), and field Capture HUD.
+- **Completed Tasks:**
+  - [x] Defined capture types in `src/game/capture/capture.types.ts` (capsule tiers, capture states, owned creature models, active projectiles).
+  - [x] Implemented data-driven capture formula in `src/game/capture/CaptureFormula.ts` (factors in health ratio, species rarity, device tier multiplier, level difference, clamped to [5%, 98%]).
+  - [x] Built `src/game/capture/usePartyStore.ts` managing active party (up to 5 companions), unlimited storage box, capsule inventory, and IndexedDB (`idb-keyval`) persistence.
+  - [x] Created `src/game/capture/CaptureSystem.ts` managing parabolic flight trajectory, 3-stage wobble shake suspense, despawning captured wild creatures, and audio chimes.
+  - [x] Created 3D capsule mesh with glowing latch button and wobbling shake animations in `src/game/capture/CaptureProjectileMesh.tsx`.
+  - [x] Built in-encounter `src/ui/hud/CaptureHUD.tsx` with capsule tier selector (keys 1/2/3), real-time catch probability %, and [R] throw trigger.
+  - [x] Built `src/ui/party/PartyHUD.tsx` and `src/ui/party/PartyManagementModal.tsx` (`Tab` hotkey) allowing renaming nicknames, moving between active party and storage, and releasing to wild.
+  - [x] Added automated unit test suites: `CaptureFormula.test.ts` (5 tests) and `PartyStore.test.ts` (5 tests).
+- **Commands Run & Verified:**
+  - `npm run typecheck` (`tsc --noEmit`) -> Passed with 0 errors.
+  - `npm test` (`vitest run`) -> 12 test suites, 47 tests passed in 455ms.
+  - `npm run build` (`tsc --noEmit && vite build`) -> Production bundle built in 829ms with 0 errors.
+- **Known Issues:** None.
+- **Next Recommended Task:** Proceed to **Phase 5: Companion behaviour** (summon and recall active party companions into 3D world with [F], intelligent follow kinematics with obstacle navigation and teleport catch-up, companion command wheel [Q] for Aggressive / Defensive / Passive / Stay / Follow modes, and companion HUD status).
