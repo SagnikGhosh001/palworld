@@ -13,15 +13,21 @@ import { CaptureHUD } from '@/ui/hud/CaptureHUD';
 import { PartyHUD } from '@/ui/party/PartyHUD';
 import { PartyManagementModal } from '@/ui/party/PartyManagementModal';
 import { CreatureJournalModal } from '@/ui/journal/CreatureJournalModal';
+import { CompanionHUD } from '@/ui/companion/CompanionHUD';
+import { CommandWheelModal } from '@/ui/companion/CommandWheelModal';
 import { useJournalStore } from '@/game/journal/useJournalStore';
 import { usePartyStore } from '@/game/capture/usePartyStore';
 import { captureSystem } from '@/game/capture/CaptureSystem';
+import { companionSystem } from '@/game/companion/CompanionSystem';
 
 export function App() {
   const [audioMuted, setAudioMuted] = useState(false);
   const [isJournalOpen, setIsJournalOpen] = useState(false);
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
+  const [isCommandWheelOpen, setIsCommandWheelOpen] = useState(false);
+
   const [captureToast, setCaptureToast] = useState<{ text: string; success: boolean } | null>(null);
+  const [companionToast, setCompanionToast] = useState<string | null>(null);
 
   const recentlyDiscovered = useJournalStore((s) => s.recentlyDiscovered);
   const clearNotification = useJournalStore((s) => s.clearNotification);
@@ -50,10 +56,18 @@ export function App() {
     loadPersistedData();
   }, [loadPersistedData]);
 
-  // Toggle Creature Journal on 'J' and Party on 'Tab'
+  // Keybindings: [F] Summon/Recall, [Q] Orders, [J] Journal, [Tab] Party
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'KeyJ' || e.key === 'j' || e.key === 'J') {
+      const tag = (document.activeElement?.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea') return;
+
+      if (e.code === 'KeyF' || e.key === 'f' || e.key === 'F') {
+        const pState = usePlayerStore.getState();
+        companionSystem.toggleSummon(pState.position, pState.rotationY);
+      } else if (e.code === 'KeyQ' || e.key === 'q' || e.key === 'Q') {
+        setIsCommandWheelOpen((prev) => !prev);
+      } else if (e.code === 'KeyJ' || e.key === 'j' || e.key === 'J') {
         setIsJournalOpen((prev) => !prev);
       } else if (e.code === 'Tab') {
         e.preventDefault();
@@ -86,6 +100,15 @@ export function App() {
       setCaptureToast(msg);
     });
 
+    // Register companion follow kinematics update
+    const unregisterCompanion = loop.registerSystem((delta: number) => {
+      const pState = usePlayerStore.getState();
+      const pSpeed = Math.sqrt(pState.velocity[0] ** 2 + pState.velocity[2] ** 2);
+      companionSystem.update(pState.position, pSpeed, delta);
+      const compMsg = companionSystem.getMessage();
+      setCompanionToast(compMsg);
+    });
+
     let frameCount = 0;
     const unregisterHud = loop.registerSystem(() => {
       frameCount++;
@@ -114,6 +137,7 @@ export function App() {
     return () => {
       unregisterPlayer();
       unregisterCapture();
+      unregisterCompanion();
       unregisterHud();
       loop.stop();
     };
@@ -148,6 +172,9 @@ export function App() {
         {/* Target HUD for nearby Creatures */}
         <TargetHUD />
 
+        {/* Active Summoned Companion HUD */}
+        <CompanionHUD />
+
         {/* In-Encounter Capsule Throw HUD */}
         <CaptureHUD />
 
@@ -157,13 +184,42 @@ export function App() {
         {/* Modals */}
         <CreatureJournalModal isOpen={isJournalOpen} onClose={() => setIsJournalOpen(false)} />
         <PartyManagementModal isOpen={isPartyModalOpen} onClose={() => setIsPartyModalOpen(false)} />
+        <CommandWheelModal isOpen={isCommandWheelOpen} onClose={() => setIsCommandWheelOpen(false)} />
+
+        {/* Companion Action Toast */}
+        {companionToast && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 76,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(15, 23, 42, 0.95)',
+              border: '1px solid #38bdf8',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.6)',
+              borderRadius: '24px',
+              padding: '8px 20px',
+              color: '#38bdf8',
+              fontFamily: 'sans-serif',
+              fontSize: '13px',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              zIndex: 44,
+            }}
+          >
+            <span>🐾</span>
+            <span>{companionToast}</span>
+          </div>
+        )}
 
         {/* Capture Outcome Toast Banner */}
         {captureToast && (
           <div
             style={{
               position: 'absolute',
-              top: 80,
+              top: 116,
               left: '50%',
               transform: 'translateX(-50%)',
               background: captureToast.success
@@ -188,7 +244,7 @@ export function App() {
         )}
 
         {/* New Creature Discovered Banner Notification */}
-        {recentlyDiscovered && !captureToast && (
+        {recentlyDiscovered && !captureToast && !companionToast && (
           <div
             style={{
               position: 'absolute',
@@ -247,7 +303,7 @@ export function App() {
               CREATUREBOUND
             </h1>
             <span style={{ fontSize: '11px', background: '#0284c7', color: '#fff', padding: '2px 6px', borderRadius: '4px' }}>
-              Phase 4: Catching Active
+              Phase 5: Companion Active
             </span>
           </div>
 
@@ -343,10 +399,17 @@ export function App() {
             <span>•</span>
             <span><strong>Space</strong> Jump</span>
             <span>•</span>
-            <span><strong>R</strong> Throw Capsule</span>
+            <span><strong>F</strong> Summon/Recall</span>
+            <span>•</span>
+            <span><strong>Q</strong> Orders</span>
+            <span>•</span>
+            <span><strong>R</strong> Throw</span>
             <span>•</span>
             <button
-              onClick={() => setIsPartyModalOpen(true)}
+              onClick={() => {
+                const p = usePlayerStore.getState();
+                companionSystem.toggleSummon(p.position, p.rotationY);
+              }}
               style={{
                 background: '#0284c7',
                 color: '#ffffff',
@@ -355,6 +418,20 @@ export function App() {
                 padding: '3px 10px',
                 cursor: 'pointer',
                 fontWeight: 'bold',
+                fontSize: '11px',
+              }}
+            >
+              🐾 Pal [F]
+            </button>
+            <button
+              onClick={() => setIsPartyModalOpen(true)}
+              style={{
+                background: '#334155',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '3px 8px',
+                cursor: 'pointer',
                 fontSize: '11px',
               }}
             >

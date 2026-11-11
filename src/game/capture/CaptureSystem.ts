@@ -1,6 +1,7 @@
 import { ActiveCaptureProjectile, CaptureDeviceTier } from './capture.types';
 import { CaptureFormula } from './CaptureFormula';
 import { creatureSpawner } from '../creatures/CreatureSpawner';
+import { useCreatureStore } from '../creatures/useCreatureStore';
 import { usePartyStore } from './usePartyStore';
 import { soundFx } from '../audio/AudioSynthesizer';
 import { globalEventBus } from '../core/EventBus';
@@ -123,8 +124,12 @@ export class CaptureSystem {
         success: true,
         timer: 4.0,
       };
-      // Despawn wild creature from spawner
-      creatureSpawner.getAll().filter((c) => c.instanceId !== proj.targetCreatureId);
+      // Despawn wild creature permanently from spawner
+      creatureSpawner.remove(proj.targetCreatureId);
+      useCreatureStore.getState().syncWithSpawner();
+      if (useCreatureStore.getState().targetedCreatureId === proj.targetCreatureId) {
+        useCreatureStore.getState().setTargetedCreatureId(null);
+      }
     }
     proj.state = 'SUCCESS';
     proj.stateTimer = 1.0;

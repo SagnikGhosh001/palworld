@@ -120,4 +120,39 @@ This log records every incremental development phase, commands executed, automat
   - `npm test` (`vitest run`) -> 12 test suites, 47 tests passed in 455ms.
   - `npm run build` (`tsc --noEmit && vite build`) -> Production bundle built in 829ms with 0 errors.
 - **Known Issues:** None.
-- **Next Recommended Task:** Proceed to **Phase 5: Companion behaviour** (summon and recall active party companions into 3D world with [F], intelligent follow kinematics with obstacle navigation and teleport catch-up, companion command wheel [Q] for Aggressive / Defensive / Passive / Stay / Follow modes, and companion HUD status).
+- **Next Recommended Task:** Proceed to **Phase 5: Companion behaviour**.
+
+---
+
+## Phase 5: Companion Behaviour
+- **Date:** 2026-11-11
+- **Status:** Complete (Verified)
+- **Increment Goal:** Implement full companion lifecycle: summon and recall active party companions into the 3D world with `[F]`, intelligent follow kinematics with terrain conformity and teleport stuck recovery (>26m), companion command wheel `[Q]` (Follow, Stay/Guard, Aggressive, Passive), companion status HUD, live 3D allied glowing aura ring, and permanent despawning of captured wild creatures from the world.
+- **Completed Tasks:**
+  - [x] Defined companion data contracts in `src/game/companion/companion.types.ts` (`CompanionCommand`, `CompanionState`).
+  - [x] Created `src/game/companion/useCompanionStore.ts` bridging headless simulation state to reactive React UI and Three.js canvas.
+  - [x] Implemented headless companion kinematics engine in `src/game/companion/CompanionSystem.ts`:
+    - Summon lead party companion ~2.2m from player with capture success audio chime.
+    - Recall companion back to capsule with audio cue.
+    - Smooth follow kinematics matching player speed, maintaining 2.4m stop distance without colliding or crowding.
+    - Stuck recovery teleport when companion falls behind >26m.
+    - `STAY` command establishing a stationary guard anchor position.
+    - Terrain contour following using continuous `getTerrainHeight`.
+  - [x] Created 3D companion representation in `src/game/companion/CompanionMesh.tsx`:
+    - Dynamic live adapter instance rendering the companion's procedural species 3D mesh with walk/idle animations.
+    - Allied glowing cyan halo ring at feet rotating smoothly.
+    - Companion point light illuminating nearby ground.
+  - [x] Created `src/ui/companion/CompanionHUD.tsx` displaying summoned companion nickname, level, elemental badge, real-time HP bar, current command, and recall action button.
+  - [x] Created `src/ui/companion/CommandWheelModal.tsx` (`Q` hotkey) allowing quick command changes (1: Follow, 2: Stay, 3: Aggressive, 4: Passive, F: Recall).
+  - [x] Fixed wild creature despawn in `src/game/capture/CaptureSystem.ts` and `src/game/creatures/CreatureWorld.tsx`:
+    - Wild creature is visually hidden inside the capsule upon impact during wobble shaking.
+    - Wild creature is permanently deleted from `creatureSpawner` upon successful capture.
+  - [x] Added starter companion (Mosskin Lv. 5) fallback in `src/game/capture/usePartyStore.ts` so players can summon and test companion mechanics immediately upon starting.
+  - [x] Updated `src/ui/party/PartyHUD.tsx` with clickable lead companion slot displaying `[F] Summon` / `Active [F]` status.
+  - [x] Added automated unit test suites: `CompanionSystem.test.ts` (9 tests) and `CaptureSystem.test.ts` (3 tests).
+- **Commands Run & Verified:**
+  - `npm run typecheck` (`tsc --noEmit`) -> Passed with 0 errors.
+  - `npm test` (`vitest run`) -> 14 test suites, 59 tests passed in 453ms.
+  - `npm run build` (`tsc --noEmit && vite build`) -> Production bundle built in 698ms with 0 errors.
+- **Known Issues:** None.
+- **Next Recommended Task:** Proceed to **Phase 6: Combat vertical slice** (Player melee attack & dodge roll, creature basic attack & signature abilities, health/damage system with elemental effectiveness, wild aggression states, and defeat/recovery states).

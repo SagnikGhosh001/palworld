@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { ThirdPersonCamera } from './player/ThirdPersonCamera';
 import { PlayerCharacter } from './player/PlayerCharacter';
+import { CompanionMesh } from './companion/CompanionMesh';
 import { CreatureWorld } from './creatures/CreatureWorld';
 import { CaptureProjectileMesh } from './capture/CaptureProjectileMesh';
 import { inputManager } from './player/InputManager';
@@ -44,6 +45,9 @@ export function GameCanvas() {
 
         {/* 3D Player Adventurer Character */}
         <PlayerCharacter />
+
+        {/* 3D Active Summoned Companion */}
+        <CompanionMesh />
 
         {/* Autonomous 3D Wild Creatures Cluster */}
         <CreatureWorld />

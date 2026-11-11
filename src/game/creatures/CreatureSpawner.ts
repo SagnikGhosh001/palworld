@@ -68,6 +68,35 @@ export class CreatureSpawner {
     return this.creatures.get(id);
   }
 
+  public remove(instanceId: string): boolean {
+    return this.creatures.delete(instanceId);
+  }
+
+  public clear(): void {
+    this.creatures.clear();
+  }
+
+  public spawn(speciesId: string, position: [number, number, number], level = 1): CreatureInstance {
+    const species = STARTER_SPECIES[speciesId];
+    const maxHp = species ? species.baseStats.maxHealth + level * 8 : 100;
+    const instance: CreatureInstance = {
+      instanceId: `wild-${speciesId}-${this.nextId++}`,
+      speciesId,
+      level,
+      currentHealth: maxHp,
+      maxHealth: maxHp,
+      position: [...position],
+      velocity: [0, 0, 0],
+      rotationY: 0,
+      aiState: 'IDLE',
+      targetPos: null,
+      homeSpawnPos: [...position],
+      stateTimer: 2.0,
+    };
+    this.creatures.set(instance.instanceId, instance);
+    return instance;
+  }
+
   public getCount(): number {
     return this.creatures.size;
   }

@@ -1,4 +1,7 @@
 import { usePartyStore, MAX_PARTY_SIZE } from '@/game/capture/usePartyStore';
+import { useCompanionStore } from '@/game/companion/useCompanionStore';
+import { companionSystem } from '@/game/companion/CompanionSystem';
+import { usePlayerStore } from '@/game/player/usePlayerStore';
 
 interface PartyHUDProps {
   onOpenManagement: () => void;
@@ -15,6 +18,16 @@ const ELEMENT_COLORS: Record<string, string> = {
 
 export function PartyHUD({ onOpenManagement }: PartyHUDProps) {
   const activeParty = usePartyStore((s) => s.activeParty);
+  const isSummoned = useCompanionStore((s) => s.isSummoned);
+
+  const handleSlotClick = (idx: number) => {
+    if (idx === 0) {
+      const p = usePlayerStore.getState();
+      companionSystem.toggleSummon(p.position, p.rotationY);
+    } else {
+      onOpenManagement();
+    }
+  };
 
   return (
     <div
@@ -77,28 +90,46 @@ export function PartyHUD({ onOpenManagement }: PartyHUDProps) {
 
           const elemColor = ELEMENT_COLORS[companion.element] || '#38bdf8';
           const hpPct = Math.round((companion.currentHealth / companion.maxHealth) * 100);
+          const isLead = idx === 0;
 
           return (
             <div
               key={companion.id}
-              onClick={onOpenManagement}
+              onClick={() => handleSlotClick(idx)}
+              title={isLead ? 'Click to Summon / Recall [F]' : 'Click to Manage Party [Tab]'}
               style={{
                 width: '190px',
-                background: 'rgba(15, 23, 42, 0.85)',
+                background: isLead && isSummoned ? 'rgba(14, 116, 144, 0.35)' : 'rgba(15, 23, 42, 0.85)',
                 backdropFilter: 'blur(8px)',
-                border: `1px solid ${elemColor}66`,
+                border: isLead && isSummoned ? `1px solid #38bdf8` : `1px solid ${elemColor}66`,
                 borderRadius: '8px',
                 padding: '4px 8px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '2px',
                 cursor: 'pointer',
+                transition: 'border 0.15s, background 0.15s',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#f8fafc' }}>
-                  {companion.nickname}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#f8fafc' }}>
+                    {companion.nickname}
+                  </span>
+                  {isLead && (
+                    <span
+                      style={{
+                        fontSize: '9px',
+                        background: isSummoned ? '#0284c7' : '#334155',
+                        color: isSummoned ? '#ffffff' : '#94a3b8',
+                        padding: '0px 4px',
+                        borderRadius: '3px',
+                      }}
+                    >
+                      {isSummoned ? 'Active [F]' : '[F]'}
+                    </span>
+                  )}
+                </div>
                 <span
                   style={{
                     fontSize: '10px',

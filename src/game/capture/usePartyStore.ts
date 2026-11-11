@@ -10,6 +10,19 @@ const DB_KEY_CAPSULES = 'creaturebound_capsules_v1';
 
 export const MAX_PARTY_SIZE = 5;
 
+export const DEFAULT_STARTER: OwnedCreature = {
+  id: 'starter-mosskin-lead',
+  speciesId: 'mosskin',
+  name: 'Mosskin',
+  nickname: 'Mosskin',
+  level: 5,
+  currentHealth: 140,
+  maxHealth: 140,
+  element: 'Nature',
+  experience: 0,
+  caughtAt: 1700000000000,
+};
+
 interface PartyState {
   activeParty: OwnedCreature[];
   storageBox: OwnedCreature[];
@@ -30,7 +43,7 @@ interface PartyState {
 }
 
 export const usePartyStore = create<PartyState>((setStore, getStore) => ({
-  activeParty: [],
+  activeParty: [DEFAULT_STARTER],
   storageBox: [],
   capsuleInventory: {
     basic: 20,
@@ -142,8 +155,10 @@ export const usePartyStore = create<PartyState>((setStore, getStore) => ({
       const savedStorage = await get<OwnedCreature[]>(DB_KEY_STORAGE);
       const savedCapsules = await get<Record<CaptureDeviceTier, number>>(DB_KEY_CAPSULES);
 
+      const activeList = savedParty && savedParty.length > 0 ? savedParty : [DEFAULT_STARTER];
+
       setStore({
-        activeParty: savedParty || [],
+        activeParty: activeList,
         storageBox: savedStorage || [],
         capsuleInventory: savedCapsules || { basic: 20, reinforced: 6, advanced: 2 },
         isLoaded: true,

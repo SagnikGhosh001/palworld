@@ -6,6 +6,7 @@ import { CreatureInstance } from './creature.types';
 import { usePlayerStore } from '../player/usePlayerStore';
 import { useCreatureStore } from './useCreatureStore';
 import { useJournalStore } from '../journal/useJournalStore';
+import { captureSystem } from '../capture/CaptureSystem';
 
 export function CreatureWorld() {
   const [creatures, setCreatures] = useState<CreatureInstance[]>([]);
@@ -25,11 +26,17 @@ export function CreatureWorld() {
     const all = creatureSpawner.getAll();
     setCreatures(all);
 
+    // Filter out any creature currently trapped inside an active capture capsule
+    const activeProj = captureSystem.getActiveProjectile();
+    const trappedId = activeProj && activeProj.state !== 'FLYING' ? activeProj.targetCreatureId : null;
+
     // Auto-discover species when within 14m
     let closestId: string | null = null;
     let closestDist = 9.0; // max target selection range
 
     for (const c of all) {
+      if (trappedId && c.instanceId === trappedId) continue;
+
       const dist = Math.sqrt(
         (c.position[0] - playerPos[0]) ** 2 + (c.position[2] - playerPos[2]) ** 2
       );
@@ -51,9 +58,13 @@ export function CreatureWorld() {
     }
   });
 
+  const activeProj = captureSystem.getActiveProjectile();
+  const trappedId = activeProj && activeProj.state !== 'FLYING' ? activeProj.targetCreatureId : null;
+  const renderList = creatures.filter((c) => c.instanceId !== trappedId);
+
   return (
     <group>
-      {creatures.map((c) => (
+      {renderList.map((c) => (
         <CreatureMesh
           key={c.instanceId}
           creature={c}
